@@ -1,3 +1,5 @@
+package chapter6
+
 object BackendRepl {
 
   // start sbt console
@@ -22,8 +24,8 @@ object BackendRepl {
 
   // list 6.3
 
-  import com.typesafe.config._
   import akka.actor._
+  import com.typesafe.config._
 
   // start akka
   val config = ConfigFactory.parseString(conf)
@@ -70,8 +72,8 @@ object FrontendRepl {
   }
   """
 
-  import com.typesafe.config._
   import akka.actor._
+  import com.typesafe.config._
 
   // start akka
   val config = ConfigFactory.parseString(conf)
