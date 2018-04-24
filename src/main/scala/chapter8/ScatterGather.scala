@@ -11,7 +11,8 @@ import java.text.SimpleDateFormat
 case class PhotoMessage(id: String,
                         photo: String,
                         creationTime: Option[Date] = None,
-                        speed: Option[Int] = None)
+                        speed: Option[Int] = None,
+                        license: Option[String] = None)
 
 
 object ImageProcessing {
@@ -64,6 +65,14 @@ class GetTime(pipe: ActorRef) extends Actor {
     }
   }
 }
+class GetLicense(pipe: ActorRef) extends Actor {
+  def receive = {
+    case msg: PhotoMessage => {
+      pipe ! msg.copy(license =
+        ImageProcessing.getLicense(msg.photo))
+    }
+  }
+}
 
 
 
@@ -75,34 +84,41 @@ class RecipientList(recipientList: Seq[ActorRef]) extends Actor {
 
 
 case class TimeoutMessage(msg: PhotoMessage)
-
+case class MessageBuffer(msg: PhotoMessage, mergeCount: Int)
 
 class Aggregator(timeout: FiniteDuration, pipe: ActorRef)
   extends Actor {
 
-  val messages = new ListBuffer[PhotoMessage]
+  val messages = new ListBuffer[MessageBuffer]
   implicit val ec = context.system.dispatcher
   override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
     super.preRestart(reason, message)
-    messages.foreach(self ! _)
+    messages.foreach(self ! _.msg)
     messages.clear()
   }
 
   def receive = {
     case rcvMsg: PhotoMessage => {
-      messages.find(_.id == rcvMsg.id) match {
-        case Some(alreadyRcvMsg) => {
+      messages.find(_.msg.id == rcvMsg.id) match {
+        case Some(alreadyBuffer) => {
           val newCombinedMsg = new PhotoMessage(
             rcvMsg.id,
             rcvMsg.photo,
-            rcvMsg.creationTime.orElse(alreadyRcvMsg.creationTime),
-            rcvMsg.speed.orElse(alreadyRcvMsg.speed))
-          pipe ! newCombinedMsg
+            rcvMsg.creationTime.orElse(alreadyBuffer.msg.creationTime),
+            rcvMsg.speed.orElse(alreadyBuffer.msg.speed))
+
+          val mergeCount = alreadyBuffer.mergeCount + 1
+          if (mergeCount >= 3) {
+            pipe ! newCombinedMsg
+          } else {
+            messages += MessageBuffer(newCombinedMsg, mergeCount)
+          }
+
           //cleanup message
-          messages -= alreadyRcvMsg
+          messages -= alreadyBuffer
         }
         case None => {
-          messages += rcvMsg
+          messages += MessageBuffer(rcvMsg, 1)
           context.system.scheduler.scheduleOnce(
             timeout,
             self,
@@ -111,10 +127,10 @@ class Aggregator(timeout: FiniteDuration, pipe: ActorRef)
       }
     }
     case TimeoutMessage(rcvMsg) => {
-      messages.find(_.id == rcvMsg.id) match {
-        case Some(alreadyRcvMsg) => {
-          pipe ! alreadyRcvMsg
-          messages -= alreadyRcvMsg
+      messages.find(_.msg.id == rcvMsg.id) match {
+        case Some(alreadyBuffer) => {
+          pipe ! alreadyBuffer.msg
+          messages -= alreadyBuffer
         }
         case None => //message is already processed
       }
