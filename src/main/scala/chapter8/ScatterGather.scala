@@ -105,7 +105,9 @@ class Aggregator(timeout: FiniteDuration, pipe: ActorRef)
             rcvMsg.id,
             rcvMsg.photo,
             rcvMsg.creationTime.orElse(alreadyBuffer.msg.creationTime),
-            rcvMsg.speed.orElse(alreadyBuffer.msg.speed))
+            rcvMsg.speed.orElse(alreadyBuffer.msg.speed),
+            rcvMsg.license.orElse(alreadyBuffer.msg.license)
+          )
 
           val mergeCount = alreadyBuffer.mergeCount + 1
           if (mergeCount >= 3) {
