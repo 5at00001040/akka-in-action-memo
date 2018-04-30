@@ -68,6 +68,7 @@ class GetTime(pipe: ActorRef) extends Actor {
 class GetLicense(pipe: ActorRef) extends Actor {
   def receive = {
     case msg: PhotoMessage => {
+      println("got licence message: " + msg.id)
       pipe ! msg.copy(license =
         ImageProcessing.getLicense(msg.photo))
     }
