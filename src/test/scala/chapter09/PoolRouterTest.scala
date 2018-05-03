@@ -1,11 +1,11 @@
-package chapter9
+package chapter09
 
 import java.util.Date
 
 import akka.actor._
 import akka.routing.{Broadcast, FromConfig}
 import akka.testkit._
-import chapter8._
+import chapter08._
 import org.scalatest._
 
 import scala.concurrent.duration._

@@ -1,4 +1,4 @@
-package chapter6
+package chapter06
 
 import spray.json._
 

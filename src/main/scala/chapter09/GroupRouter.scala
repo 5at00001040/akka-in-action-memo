@@ -1,9 +1,9 @@
-package chapter9
+package chapter09
 
 import akka.actor._
 import akka.actor.{Actor, Props}
 import akka.routing._
-import chapter8.GetLicense
+import chapter08.GetLicense
 
 class GroupRouter extends App {
 

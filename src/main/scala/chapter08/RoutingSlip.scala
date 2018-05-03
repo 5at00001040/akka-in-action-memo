@@ -1,4 +1,4 @@
-package chapter8
+package chapter08
 
 import akka.actor._
 import akka.actor.{Actor, ActorRef}

@@ -1,4 +1,4 @@
-package chapter9
+package chapter09
 
 import akka.actor.{ActorRef, Actor}
 import akka.routing.ConsistentHashingRouter.ConsistentHashable
