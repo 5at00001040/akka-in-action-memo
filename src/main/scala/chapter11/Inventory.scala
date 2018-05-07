@@ -2,6 +2,7 @@ package chapter11
 
 import akka.actor.{Actor, ActorRef, FSM}
 import math.min
+import scala.concurrent.duration._
 
 sealed trait State
 case object WaitForRequests extends State
@@ -38,7 +39,7 @@ class Inventory(publisher: ActorRef) extends Actor with FSM[State, StateData] {
         goto(WaitForPublisher) using newStateData
       }
     }
-    case Event(request: PendingRequest, data: StateData) => {
+    case Event(PendingRequest, data: StateData) => {
       if (data.pendingRequests.isEmpty) {
         stay
       } else if (data.nrBooksInStore > 0) {
@@ -49,12 +50,15 @@ class Inventory(publisher: ActorRef) extends Actor with FSM[State, StateData] {
     }
   }
 
-  when(WaitForPublisher) {
+  when(WaitForPublisher, stateTimeout = 5 seconds) {
     case Event(supply: BookSupply, data: StateData) => {
       goto(ProcessRequest) using data.copy(nrBooksInStore = supply.nrBooks)
     }
     case Event(BookSupplySoldOut, _) => {
       goto(ProcessSoldOut)
+    }
+    case Event(StateTimeout, _) => {
+      goto(WaitForRequests)
     }
   }
 

@@ -44,6 +44,23 @@ class InventoryTest extends TestKit(ActorSystem("InventoryTest"))
       stateProbe.expectMsg(new Transition(inventory, ProcessSoldOut, SoldOut))
 
     }
+    "timer" in {
+
+      val publisher = TestProbe()
+      val inventory = system.actorOf(Props(new Inventory(publisher.ref)))
+      val stateProbe = TestProbe()
+      val replyProbe = TestProbe()
+
+      inventory ! SubscribeTransitionCallBack(stateProbe.ref)
+      stateProbe.expectMsg(CurrentState(inventory, WaitForRequests))
+
+      inventory ! BookRequest("context1", replyProbe.ref)
+      stateProbe.expectMsg(Transition(inventory, WaitForRequests, WaitForPublisher))
+      publisher.expectMsg(PublisherRequest)
+      stateProbe.expectMsg(6 seconds, Transition(inventory, WaitForPublisher, WaitForRequests))
+      stateProbe.expectMsg(Transition(inventory, WaitForRequests, WaitForPublisher))
+
+    }
   }
 
 }
